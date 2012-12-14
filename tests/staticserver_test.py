@@ -4,7 +4,7 @@ import tempfile
 import shutil
 
 import requests
-from nose.tools import istest, assert_equals
+from nose.tools import istest, assert_equals, assert_true
 
 import staticserver
 
@@ -38,6 +38,12 @@ def put_with_correct_key_allows_file_to_be_downloaded_with_get():
     put("/hello", "Hello world!", key=key)
     result = get("/hello")
     assert_equals("Hello world!", result.content)
+    
+@test
+def content_type_is_guessed_for_files():
+    put("/hello.xml", "<p>Hello world!</p>", key=key)
+    result = get("/hello.xml")
+    assert_true(result.headers["content-type"].startswith("application/xml;"))
     
 @test
 def put_with_incorrect_key_does_not_upload_file():

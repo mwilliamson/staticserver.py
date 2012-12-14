@@ -1,5 +1,6 @@
 import threading
 import os
+import mimetypes
 
 from wsgiref.simple_server import make_server
 from pyramid.config import Configurator
@@ -9,13 +10,16 @@ from pyramid.httpexceptions import HTTPNotFound
 
 def start(port, root, key):
     def static_file(request):
-        path = os.path.join(root, request.matchdict["name"])
+        default_file_type = (None, None)
+        name = request.matchdict["name"]
+        path = os.path.join(root, name)
         
         if request.method == "GET":
             # TODO: use isfile
             if os.path.exists(path):
+                content_type, encoding = mimetypes.guess_type(name) or default_file_type
                 with open(path) as f:
-                    return Response(f.read())
+                    return Response(f.read(), content_type=content_type)
             else:
                 return HTTPNotFound()
                 
