@@ -40,6 +40,13 @@ def put_with_correct_key_allows_file_to_be_downloaded_with_get():
     assert_equals("Hello world!", result.content)
     
 @test
+def subsequent_puts_are_ignored():
+    put("/hello", "Hello world!", key=key)
+    put("/hello", "Goodbye!", key=key)
+    result = get("/hello")
+    assert_equals("Hello world!", result.content)
+    
+@test
 def content_type_is_guessed_for_files():
     put("/hello.xml", "<p>Hello world!</p>", key=key)
     result = get("/hello.xml")
