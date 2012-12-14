@@ -43,6 +43,16 @@ def put_with_correct_key_allows_file_to_be_downloaded_with_get():
 def put_with_incorrect_key_does_not_upload_file():
     put("/hello", "Hello world!", key="invalid-key")
     assert_404("/hello")
+    
+@test
+def cannot_put_to_root():
+    put("/", "Hello world!", key=key)
+    assert_404("/")
+    
+@test
+def cannot_put_to_directory():
+    put("/hello/", "Hello world!", key=key)
+    assert_404("/hello/")
 
 def put(path, content, key):
     return requests.put("{0}?key={1}".format(_path_to_url(path), key), content)
