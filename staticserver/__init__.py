@@ -36,12 +36,14 @@ def start(port, root, key):
             if os.path.basename(physical_path) == "":
                 return Response("Cannot overwrite directory", status=403)
             else:
-                if not os.path.exists(physical_path):
+                if os.path.exists(physical_path):
+                    return Response("Cannot overwrite existing path", status=403)
+                else:
                     # TODO: locking
                     _mkdir_p(os.path.dirname(physical_path))
                     with open(physical_path, "w") as f:
                         f.write(request.body)
-                return Response("OK")
+                    return Response("OK")
         else:
             return Response("Bad key", status=403)
         

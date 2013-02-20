@@ -46,9 +46,10 @@ def files_can_be_put_into_sub_directories():
     assert_equals("Hello world!", result.content)
     
 @test
-def subsequent_puts_are_ignored():
+def subsequent_puts_are_ignored_and_return_403():
     put("/hello", "Hello world!", key=key)
-    put("/hello", "Goodbye!", key=key)
+    second_put = put("/hello", "Goodbye!", key=key)
+    assert_equals(403, second_put.status_code)
     result = get("/hello")
     assert_equals("Hello world!", result.content)
     
