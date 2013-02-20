@@ -19,18 +19,7 @@ def start(port, root, key):
             return get_file(physical_path, web_path)
                 
         if request.method == "PUT":
-            if request.GET.get("key") == key:
-                if os.path.basename(physical_path) == "":
-                    return Response("Cannot overwrite directory", status=403)
-                else:
-                    if not os.path.exists(physical_path):
-                        # TODO: locking
-                        _mkdir_p(os.path.dirname(physical_path))
-                        with open(physical_path, "w") as f:
-                            f.write(request.body)
-                    return Response("OK")
-            else:
-                return Response("Bad key", status=403)
+            return put_file(request, physical_path, web_path)
     
     
     def get_file(physical_path, web_path):
@@ -40,6 +29,21 @@ def start(port, root, key):
                 return Response(f.read(), content_type=content_type)
         else:
             return HTTPNotFound()
+            
+            
+    def put_file(request, physical_path, web_path):
+        if request.GET.get("key") == key:
+            if os.path.basename(physical_path) == "":
+                return Response("Cannot overwrite directory", status=403)
+            else:
+                if not os.path.exists(physical_path):
+                    # TODO: locking
+                    _mkdir_p(os.path.dirname(physical_path))
+                    with open(physical_path, "w") as f:
+                        f.write(request.body)
+                return Response("OK")
+        else:
+            return Response("Bad key", status=403)
         
     
     config = Configurator()
