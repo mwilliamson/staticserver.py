@@ -40,6 +40,12 @@ def put_with_correct_key_allows_file_to_be_downloaded_with_get():
     assert_equals("Hello world!", result.content)
     
 @test
+def files_can_be_put_into_sub_directories():
+    put("/message/hello", "Hello world!", key=key)
+    result = get("/message/hello")
+    assert_equals("Hello world!", result.content)
+    
+@test
 def subsequent_puts_are_ignored():
     put("/hello", "Hello world!", key=key)
     put("/hello", "Goodbye!", key=key)
@@ -68,14 +74,22 @@ def cannot_put_to_directory():
     assert_404("/hello/")
 
 def put(path, content, key):
-    return requests.put("{0}?key={1}".format(_path_to_url(path), key), content)
+    url = "{0}?key={1}".format(_path_to_url(path), key)
+    return _check_response(requests.put(url, content))
 
 def get(path):
-    return requests.get(_path_to_url(path))
+    return _check_response(requests.get(_path_to_url(path)))
     
 def assert_404(path):
     response = get(path)
     assert_equals(404, response.status_code)
+
+
+def _check_response(response):
+    if response.status_code // 100 == 5:
+        raise AssertionError("Server error: {0}".format(response.status_code))
+    else:
+        return response
 
 def _path_to_url(path):
     return "http://localhost:{0}{1}".format(_port, path)

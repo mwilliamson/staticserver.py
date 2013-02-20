@@ -1,6 +1,7 @@
 import threading
 import os
 import mimetypes
+import errno
 
 from wsgiref.simple_server import make_server
 from pyramid.config import Configurator
@@ -15,8 +16,7 @@ def start(port, root, key):
         path = os.path.join(root, name)
         
         if request.method == "GET":
-            # TODO: use isfile
-            if os.path.exists(path):
+            if os.path.isfile(path):
                 content_type, encoding = mimetypes.guess_type(name) or default_file_type
                 with open(path) as f:
                     return Response(f.read(), content_type=content_type)
@@ -25,17 +25,21 @@ def start(port, root, key):
                 
         if request.method == "PUT":
             if request.GET.get("key") == key:
-                if not os.path.exists(path):
-                    # TODO: locking
-                    with open(path, "w") as f:
-                        f.write(request.body)
-                return Response("OK")
+                if os.path.basename(path) == "":
+                    return Response("Cannot overwrite directory", status=403)
+                else:
+                    if not os.path.exists(path):
+                        # TODO: locking
+                        _mkdir_p(os.path.dirname(path))
+                        with open(path, "w") as f:
+                            f.write(request.body)
+                    return Response("OK")
             else:
                 return Response("Bad key", status=403)
         
     
     config = Configurator()
-    config.add_route('static_file', '/{name}')
+    config.add_route('static_file', '/{name:.*}')
     config.add_view(static_file, route_name='static_file')
     app = config.make_wsgi_app()
     
@@ -56,3 +60,11 @@ class Server(object):
     def __exit__(self, *args):
         self._server.shutdown()
         self._thread.join()
+
+
+def _mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as error:
+        if not (error.errno == errno.EEXIST and os.path.isdir(path)):
+            raise
