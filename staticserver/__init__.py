@@ -12,30 +12,34 @@ from pyramid.httpexceptions import HTTPNotFound
 def start(port, root, key):
     def static_file(request):
         default_file_type = (None, None)
-        name = request.matchdict["name"]
-        path = os.path.join(root, name)
+        web_path = request.matchdict["name"]
+        physical_path = os.path.join(root, web_path)
         
         if request.method == "GET":
-            if os.path.isfile(path):
-                content_type, encoding = mimetypes.guess_type(name) or default_file_type
-                with open(path) as f:
-                    return Response(f.read(), content_type=content_type)
-            else:
-                return HTTPNotFound()
+            return get_file(physical_path, web_path)
                 
         if request.method == "PUT":
             if request.GET.get("key") == key:
-                if os.path.basename(path) == "":
+                if os.path.basename(physical_path) == "":
                     return Response("Cannot overwrite directory", status=403)
                 else:
-                    if not os.path.exists(path):
+                    if not os.path.exists(physical_path):
                         # TODO: locking
-                        _mkdir_p(os.path.dirname(path))
-                        with open(path, "w") as f:
+                        _mkdir_p(os.path.dirname(physical_path))
+                        with open(physical_path, "w") as f:
                             f.write(request.body)
                     return Response("OK")
             else:
                 return Response("Bad key", status=403)
+    
+    
+    def get_file(physical_path, web_path):
+        if os.path.isfile(physical_path):
+            content_type, encoding = mimetypes.guess_type(web_path) or default_file_type
+            with open(physical_path) as f:
+                return Response(f.read(), content_type=content_type)
+        else:
+            return HTTPNotFound()
         
     
     config = Configurator()
@@ -48,6 +52,7 @@ def start(port, root, key):
     server_thread.start()
     
     return Server(server, server_thread)
+
 
 class Server(object):
     def __init__(self, server, thread):
