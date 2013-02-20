@@ -26,6 +26,7 @@ def start(port, root, key):
         if request.method == "PUT":
             if request.GET.get("key") == key:
                 if not os.path.exists(path):
+                    # TODO: locking
                     with open(path, "w") as f:
                         f.write(request.body)
                 return Response("OK")
