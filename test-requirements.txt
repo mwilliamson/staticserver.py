@@ -1,2 +1,2 @@
 nose==1.2.1
-requests==0.14.2
+requests==2.32.0
